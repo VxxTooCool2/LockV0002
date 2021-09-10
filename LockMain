@@ -414,7 +414,7 @@ return Aiming
 
 --[[
 -- // Load Aiming Module
-local Aiming = loadstring(game:HttpGet("https://raw.githubusercontent.com/VxxTooCool2/UrMomV0001/main/BANNED/BANNED"))()
+local Aiming = loadstring(game:HttpGet("https://raw.githubusercontent.com/VxxTooCool2/LockV0002/main/LockMain"))()
 
 -- // Hook
 local __namecall
@@ -443,7 +443,7 @@ end)
 
 --[[
 -- // Load Aiming Module
-local Aiming = loadstring(game:HttpGet("https://raw.githubusercontent.com/VxxTooCool2/UrMomV0001/main/BANNED/BANNED"))()
+local Aiming = loadstring(game:HttpGet("https://raw.githubusercontent.com/VxxTooCool2/LockV0002/main/LockMain"))()
 
 -- // Hook
 local __index
