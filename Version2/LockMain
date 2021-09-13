@@ -1,6 +1,12 @@
 --[[
+getgenv().AimPart = "HumanoidRootPart" -- For R15 Games: {UpperTorso, LowerTorso, HumanoidRootPart, Head} | For R6 Games: {Head, Torso, HumanoidRootPart}
+getgenv().AimlockToggleKey = "Y" -- Toggles Aimbot On/Off 
+getgenv().AimRadius = 50 -- How far away from someones character you want to lock on at
 getgenv().ThirdPerson = false -- Locking onto someone in your Third Person POV
 getgenv().FirstPerson = true -- Locking onto someone in your First Person POV
+getgenv().TeamCheck = false -- Check if Target is on your Team (True means it wont lock onto your teamates, false is vice versa) (Set it to false if there are no teams)
+getgenv().PredictMovement = true -- Predicts if they are moving in fast velocity (like jumping) so the aimbot will go a bit faster to match their speed 
+getgenv().PredictionVelocity = 10 -- The speed of the PredictMovement feature 
 ]]--
 
 getgenv().CiazwareUniversalAimbotLoadingTime = tick()
@@ -45,9 +51,9 @@ getgenv().WorldToScreenPoint = function(P)
 end
 
 getgenv().GetObscuringObjects = function(T)
-	if T and T:FindFirstChild(UpperTorso) and Client and Client.Character:FindFirstChild("Head") then 
+	if T and T:FindFirstChild(getgenv().AimPart) and Client and Client.Character:FindFirstChild("Head") then 
 		local RayPos = workspace:FindPartOnRay(RNew(
-			T[UpperTorso].Position, Client.Character.Head.Position)
+			T[getgenv().AimPart].Position, Client.Character.Head.Position)
 		)
 		if RayPos then return RayPos:IsDescendantOf(T) end
 	end
@@ -66,7 +72,17 @@ getgenv().GetNearestTarget = function()
 	for i, v in pairs(players) do
 		if v.Character ~= nil then
 			local AIM = v.Character:FindFirstChild("Head")
-			if TeamCheck == false and v.Team == Client.Team then 
+			if getgenv().TeamCheck == true and v.Team ~= Client.Team then
+				local DISTANCE = (v.Character:FindFirstChild("Head").Position - game.Workspace.CurrentCamera.CFrame.p).magnitude
+				local RAY = Ray.new(game.Workspace.CurrentCamera.CFrame.p, (Mouse.Hit.p - game.Workspace.CurrentCamera.CFrame.p).unit * DISTANCE)
+				local HIT,POS = game.Workspace:FindPartOnRay(RAY, game.Workspace)
+				local DIFF = math.floor((POS - AIM.Position).magnitude)
+				PLAYER_HOLD[v.Name .. i] = {}
+				PLAYER_HOLD[v.Name .. i].dist= DISTANCE
+				PLAYER_HOLD[v.Name .. i].plr = v
+				PLAYER_HOLD[v.Name .. i].diff = DIFF
+				table.insert(DISTANCES, DIFF)
+			elseif getgenv().TeamCheck == false and v.Team == Client.Team then 
 				local DISTANCE = (v.Character:FindFirstChild("Head").Position - game.Workspace.CurrentCamera.CFrame.p).magnitude
 				local RAY = Ray.new(game.Workspace.CurrentCamera.CFrame.p, (Mouse.Hit.p - game.Workspace.CurrentCamera.CFrame.p).unit * DISTANCE)
 				local HIT,POS = game.Workspace:FindPartOnRay(RAY, game.Workspace)
@@ -85,7 +101,7 @@ getgenv().GetNearestTarget = function()
 	end
 
 	local L_DISTANCE = math.floor(math.min(unpack(DISTANCES)))
-	if L_DISTANCE > 100 then
+	if L_DISTANCE > getgenv().AimRadius then
 		return nil
 	end
 
@@ -114,21 +130,21 @@ CheckTeamsChildren()
     local T;
     for _, p in next, Players:GetPlayers() do 
         if p ~= Client then 
-            if p.Character and p.Character:FindFirstChild(UpperTorso) then 
+            if p.Character and p.Character:FindFirstChild(getgenv().AimPart) then 
                 if getgenv().TeamCheck == true and p.Team ~= Client.Team then 
-                    local Pos, ScreenCheck = WorldToScreenPoint(p.Character[UpperTorso].Position)
+                    local Pos, ScreenCheck = WorldToScreenPoint(p.Character[getgenv().AimPart].Position)
                     Pos = Vec2(Pos.X, Pos.Y)
                     local MPos = Vec2(Mouse.X, Mouse.Y) -- Credits to CriShoux for this
                     local Distance = (Pos - MPos).Magnitude;
-                    if Distance < 100 then 
+                    if Distance < getgenv().AimRadius then 
                         T = p 
                     end
                 elseif getgenv().TeamCheck == false and p.Team == Client.Team then 
-                    local Pos, ScreenCheck = WorldToScreenPoint(p.Character[UpperTorso].Position)
+                    local Pos, ScreenCheck = WorldToScreenPoint(p.Character[getgenv().AimPart].Position)
                     Pos = Vec2(Pos.X, Pos.Y)
                     local MPos = Vec2(Mouse.X, Mouse.Y) -- Credits to CriShoux for this
                     local Distance = (Pos - MPos).Magnitude;
-                    if Distance < 100 then 
+                    if Distance < getgenv().AimRadius then 
                         T = p 
                     end
                 end
@@ -142,7 +158,7 @@ end]]--
 
 Uis.InputBegan:Connect(function(Key)
 	if not (Uis:GetFocusedTextBox()) then 
-		if Key.UserInputType == Enum.UserInputType.MouseButton2 then 
+		if Key.UserInputType == Enum.UserInputType.Q then 
 			pcall(function()
 				if MousePressed ~= true then MousePressed = true end 
 				local Target;Target = GetNearestTarget()
@@ -152,7 +168,7 @@ Uis.InputBegan:Connect(function(Key)
 				end
 			end)
 		end
-		if Key.KeyCode == Enum.KeyCode.P then 
+		if Key.KeyCode == Enum.KeyCode[AimlockToggleKey] then 
 			Aimlock = not Aimlock
 			Notify("RAYX", "Locked On: "..tostring(Aimlock), "", 3)
 		end
@@ -184,17 +200,21 @@ RService.RenderStepped:Connect(function()
 		end
 	end
 	if Aimlock == true and MousePressed == true then 
-		if AimlockTarget and AimlockTarget.Character and AimlockTarget.Character:FindFirstChild(UpperTorso) then 
+		if AimlockTarget and AimlockTarget.Character and AimlockTarget.Character:FindFirstChild(getgenv().AimPart) then 
 			if getgenv().FirstPerson == true then
 				if CanNotify == true then
-					if PredictMovement == true then 
-						Camera.CFrame = CF(Camera.CFrame.p, AimlockTarget.Character[UpperTorso].Position + AimlockTarget.Character[UpperTorso].Velocity/10)
+					if getgenv().PredictMovement == true then 
+						Camera.CFrame = CF(Camera.CFrame.p, AimlockTarget.Character[getgenv().AimPart].Position + AimlockTarget.Character[getgenv().AimPart].Velocity/PredictionVelocity)
+					elseif getgenv().PredictMovement == false then 
+						Camera.CFrame = CF(Camera.CFrame.p, AimlockTarget.Character[getgenv().AimPart].Position)
 					end
 				end
 			elseif getgenv().ThirdPerson == true then 
 				if CanNotify == true then
-					if PredictMovement == true then 
-						Camera.CFrame = CF(Camera.CFrame.p, AimlockTarget.Character[UpperTorso].Position + AimlockTarget.Character[UpperTorso].Velocity/10)
+					if getgenv().PredictMovement == true then 
+						Camera.CFrame = CF(Camera.CFrame.p, AimlockTarget.Character[getgenv().AimPart].Position + AimlockTarget.Character[getgenv().AimPart].Velocity/PredictionVelocity)
+					elseif getgenv().PredictMovement == false then 
+						Camera.CFrame = CF(Camera.CFrame.p, AimlockTarget.Character[getgenv().AimPart].Position)
 					end
 				end 
 			end
