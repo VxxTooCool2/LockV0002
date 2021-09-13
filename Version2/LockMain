@@ -158,7 +158,7 @@ end]]--
 
 Uis.InputBegan:Connect(function(Key)
 	if not (Uis:GetFocusedTextBox()) then 
-		if Key.UserInputType == Enum.UserInputType.Q then 
+		if Key.KeyCode == Enum.KeyCode.Q then 
 			pcall(function()
 				if MousePressed ~= true then MousePressed = true end 
 				local Target;Target = GetNearestTarget()
